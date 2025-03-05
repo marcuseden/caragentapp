@@ -1,0 +1,62 @@
+
+=== GENERAL STATISTICS ===
+----------------------  ----
+Total Cars              1055
+Cars with Source URL     553
+Cars with Verified URL     0
+Cars with Valid URL        0
+Cars with Invalid URL      0
+----------------------  ----
+
+Most recent scrape: 2025-03-05 15:53:32.207000 (0 days, 0 hours ago)
+
+=== CARS BY COUNTRY ===
+Country      Count
+---------  -------
+denmark        212
+germany        181
+norway         169
+sweden         166
+france         165
+poland         162
+
+=== TOP 10 BRANDS ===
+Brand         Count
+----------  -------
+Peugeot         102
+Volvo            98
+Hyundai          98
+BMW              90
+Mazda            88
+Toyota           85
+Volkswagen       83
+Tesla            81
+Ford             81
+Mercedes         77
+
+=== CARS BY FUEL TYPE ===
+Fuel Type                                                                                                                                                                                                                                                                                    Count
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -------
+Hybrid                                                                                                                                                                                                                                                                                         263
+El                                                                                                                                                                                                                                                                                             253
+Petrol                                                                                                                                                                                                                                                                                         244
+Diesel                                                                                                                                                                                                                                                                                         242
+Unknown                                                                                                                                                                                                                                                                                         43
+ElRækkevidde(WLTP) 524 kmBatterikapacitet96,0 kWhVis alle detaljerEnergiforbrug183 Wh/kmHjemmeopladning AC-Hurtig opladning DC-Opladningstid DC 10-80%-Periodisk afgift840 kr. / årYdelse292 hk/565 nmAcceleration6,7 sek.Tophastighed210 km/tTrækvægt750 kgFarveSortmetal                       1
+ElRækkevidde(WLTP) 536 kmBatterikapacitet87,4 kWhVis alle detaljerEnergiforbrug181 Wh/kmHjemmeopladning AC-Hurtig opladning DC-Opladningstid DC 10-80%-Periodisk afgift840 kr. / årYdelse238 hk/300 nmAcceleration7,6 sek.Tophastighed160 km/tTrækvægt750 kgFarveBeigemetal                      1
+BenzinBrændstofforbrug(NEDC) 18,9 km/lCO2 udledning121 g/kmVis alle detaljerEuronorm-Periodisk afgift2.220 kr. / årYdelse150 hk/250 nmAcceleration8,5 sek.Tophastighed201 km/tGeartypeManuelAntal gear6Trækvægt1.800 kgFarveBeigemetal                                                           1
+BenzinBrændstofforbrug(NEDC) 18,2 km/lCO2 udledning126 g/kmVis alle detaljerEuronorm-Periodisk afgift2.220 kr. / årYdelse150 hk/250 nmAcceleration8,6 sek.Tophastighed198 km/tGeartypeAutomatiskAntal gear7Trækvægt1.600 kgFarve-                                                                1
+ElRækkevidde(WLTP) 620 kmBatterikapacitet94,0 kWhVis alle detaljerEnergiforbrug-Hjemmeopladning AC-Hurtig opladning DC-Opladningstid DC 10-80%-Periodisk afgift840 kr. / årYdelse272 hk/343 nmAcceleration7,1 sek.Tophastighed200 km/tTrækvægt1.500 kgFarveGråmetal                              1
+ElRækkevidde(WLTP) 469 kmBatterikapacitet66,5 kWhVis alle detaljerEnergiforbrug164 Wh/kmHjemmeopladning AC-Hurtig opladning DC-Opladningstid DC 10-80%-Periodisk afgift840 kr. / årYdelse190 hk/385 nmAcceleration9,2 sek.Tophastighed160 km/tTrækvægt-FarveHvidmetal                            1
+ElRækkevidde(WLTP) 318 kmBatterikapacitet50,0 kWhVis alle detaljerEnergiforbrug178 Wh/kmHjemmeopladning AC-Hurtig opladning DC-Opladningstid DC 10-80%-Periodisk afgift840 kr. / årYdelse136 hk/260 nmAcceleration8,5 sek.Tophastighed150 km/tTrækvægt-FarveSølvmetal                            1
+ElRækkevidde(WLTP) 523 kmBatterikapacitet87,4 kWhVis alle detaljerEnergiforbrug184 Wh/kmHjemmeopladning AC11,0 kWHurtig opladning DC130 kWOpladningstid DC 10-80%35 minPeriodisk afgift840 kr. / årYdelse238 hk/300 nmAcceleration7,6 sek.Tophastighed160 km/tTrækvægt750 kgFarveGråmetal        1
+BenzinBrændstofforbrug(NEDC) 26,8 km/lCO2 udledning86 g/kmVis alle detaljerEuronorm6Periodisk afgift1.260 kr. / årYdelse75 hk/118 nmAcceleration13,2 sek.Tophastighed174 km/tGeartypeManuelAntal gear5Trækvægt500 kgFarveKoksmetal                                                               1
+BenzinBrændstofforbrug(NEDC) 23,3 km/lCO2 udledning99 g/kmVis alle detaljerEuronorm-Periodisk afgift840 kr. / årYdelse105 hk/170 nmAcceleration11,2 sek.Tophastighed200 km/tGeartypeManuelAntal gear5Trækvægt1.220 kgFarveGrå                                                                    1
+
+=== PRICE STATISTICS ===
+---------------  -----------
+Average Price    428,632 DKK
+Minimum Price    3,284 DKK
+Maximum Price    778,573 DKK
+Cars with Price  1013
+---------------  -----------

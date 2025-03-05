@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}Database Management | CarAgentApp{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Database Management</h1>
+    
+    <div id="status" class="mb-6 p-4 bg-blue-100 text-blue-800 rounded-lg">
+        Loading database statistics...
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Database Stats Card -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Database Statistics</h2>
+            <div id="dbStats" class="space-y-2">
+                <div class="flex justify-between">
+                    <span>Total Cars:</span>
+                    <span id="totalCars" class="font-bold">Loading...</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Cars with Source URLs:</span>
+                    <span id="carsWithUrl" class="font-bold">Loading...</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Cars without Source URLs:</span>
+                    <span id="carsWithoutUrl" class="font-bold">Loading...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Currency Service Card -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Currency Service</h2>
+            <div id="currencyStats" class="space-y-2">
+                <div class="flex justify-between">
+                    <span>Status:</span>
+                    <span id="currencyStatus" class="font-bold">Loading...</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Last Updated:</span>
+                    <span id="currencyLastUpdated" class="font-bold">Loading...</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Using Fallback:</span>
+                    <span id="currencyFallback" class="font-bold">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Database Actions -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 class="text-xl font-semibold mb-4">Database Actions</h2>
+        
+        <div class="space-y-6">
+            <!-- Remove Unverified Cars -->
+            <div class="border-b pb-4">
+                <h3 class="font-medium mb-2">Remove Unverified Cars</h3>
+                <p class="text-gray-600 mb-4">Remove all cars without verified source URLs from the database.</p>
+                
+                <div class="flex items-center mb-2">
+                    <input type="checkbox" id="confirmRemove" class="mr-2">
+                    <label for="confirmRemove" class="text-red-600">I understand this action cannot be undone</label>
+                </div>
+                
+                <button id="removeUnverifiedBtn" class="px-4 py-2 bg-red-600 text-white rounded opacity-50 cursor-not-allowed" disabled>
+                    Remove Unverified Cars
+                </button>
+                <span id="removeStatus" class="ml-2 text-sm"></span>
+            </div>
+            
+            <!-- Update Exchange Rates -->
+            <div>
+                <h3 class="font-medium mb-2">Update Exchange Rates</h3>
+                <p class="text-gray-600 mb-4">Force an update of the currency exchange rates.</p>
+                
+                <button id="updateRatesBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Update Exchange Rates
+                </button>
+                <span id="updateRatesStatus" class="ml-2 text-sm"></span>
+            </div>
+            
+            <!-- Check for Invalid URLs -->
+            <div class="border-b pb-4">
+                <h3 class="font-medium mb-2">Check for Invalid URLs</h3>
+                <p class="text-gray-600 mb-4">Check source URLs for 404 errors and mark them as invalid.</p>
+                
+                <button id="checkInvalidUrlsBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Check for Invalid URLs
+                </button>
+                <span id="checkUrlsStatus" class="ml-2 text-sm"></span>
+            </div>
+            
+            <!-- Remove Cars with Invalid URLs -->
+            <div class="border-b pb-4">
+                <h3 class="font-medium mb-2">Remove Cars with Invalid URLs</h3>
+                <p class="text-gray-600 mb-4">Remove all cars with invalid source URLs from the database.</p>
+                
+                <div class="flex items-center mb-2">
+                    <input type="checkbox" id="confirmRemoveInvalid" class="mr-2">
+                    <label for="confirmRemoveInvalid" class="text-red-600">I understand this action cannot be undone</label>
+                </div>
+                
+                <button id="removeInvalidUrlsBtn" class="px-4 py-2 bg-red-600 text-white rounded opacity-50 cursor-not-allowed" disabled>
+                    Remove Cars with Invalid URLs
+                </button>
+                <span id="removeInvalidStatus" class="ml-2 text-sm"></span>
+            </div>
+            
+            <!-- Scrape Cars -->
+            <div class="border-b pb-4">
+                <h3 class="font-medium mb-2">Scrape Cars</h3>
+                <p class="text-gray-600 mb-4">Scrape car listings from specified URLs.</p>
+                
+                <div class="mb-4">
+                    <label for="listingUrls" class="block text-sm font-medium text-gray-700 mb-1">Listing URLs (one per line)</label>
+                    <textarea id="listingUrls" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="maxCars" class="block text-sm font-medium text-gray-700 mb-1">Maximum Cars to Scrape</label>
+                    <input type="number" id="maxCars" value="1000" min="1" max="10000" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <button id="scrapeCarsBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Start Scraping
+                </button>
+                <span id="scrapeStatus" class="ml-2 text-sm"></span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Get elements
+        const statusEl = document.getElementById('status');
+        const confirmRemoveEl = document.getElementById('confirmRemove');
+        const removeUnverifiedBtn = document.getElementById('removeUnverifiedBtn');
+        const removeStatusEl = document.getElementById('removeStatus');
+        const updateRatesBtn = document.getElementById('updateRatesBtn');
+        const updateRatesStatusEl = document.getElementById('updateRatesStatus');
+        const confirmRemoveInvalidEl = document.getElementById('confirmRemoveInvalid');
+        const removeInvalidUrlsBtn = document.getElementById('removeInvalidUrlsBtn');
+        const removeInvalidStatusEl = document.getElementById('removeInvalidStatus');
+        const checkInvalidUrlsBtn = document.getElementById('checkInvalidUrlsBtn');
+        const checkUrlsStatusEl = document.getElementById('checkUrlsStatus');
+        const scrapeCarsBtn = document.getElementById('scrapeCarsBtn');
+        const scrapeStatusEl = document.getElementById('scrapeStatus');
+        const listingUrlsEl = document.getElementById('listingUrls');
+        const maxCarsEl = document.getElementById('maxCars');
+        
+        // Create a universal API client that works in both standalone and mounted modes
+        const ApiClient = {
+            baseUrl: '',
+            
+            init() {
+                // Determine if we're running in standalone mode or as part of the main app
+                const path = window.location.pathname;
+                this.baseUrl = path.includes('/admin') ? '/admin' : '';
+                console.log(`API Client initialized with baseUrl: ${this.baseUrl}`);
+                return this;
+            },
+            
+            async get(endpoint) {
+                const url = `${this.baseUrl}${endpoint}`;
+                console.log(`GET ${url}`);
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            },
+            
+            async post(endpoint, data = {}) {
+                const url = `${this.baseUrl}${endpoint}`;
+                console.log(`POST ${url}`);
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            }
+        }.init();
+        
+        try {
+            // Use the API client for all requests
+            const statsData = await ApiClient.get('/stats');
+            
+            // Update the UI with the stats data
+            document.getElementById('totalCars').textContent = statsData.total_cars.toLocaleString();
+            document.getElementById('carsWithUrl').textContent = statsData.cars_with_url.toLocaleString();
+            document.getElementById('carsWithoutUrl').textContent = statsData.cars_without_url.toLocaleString();
+            
+            // Update currency service status
+            document.getElementById('currencyStatus').textContent = statsData.currency_status.status;
+            document.getElementById('currencyLastUpdated').textContent = statsData.currency_status.last_updated || 'Never';
+            document.getElementById('currencyFallback').textContent = statsData.currency_status.using_fallback ? 'Yes' : 'No';
+            
+            // Hide the loading status
+            statusEl.classList.add('hidden');
+            
+        } catch (error) {
+            console.error('Error loading database statistics:', error);
+            statusEl.className = 'mb-6 p-4 bg-red-100 text-red-800 rounded-lg';
+            statusEl.textContent = `Error loading database statistics: ${error.message}`;
+        }
+        
+        // Set up the confirm checkbox
+        confirmRemoveEl.addEventListener('change', function() {
+            removeUnverifiedBtn.disabled = !this.checked;
+            removeUnverifiedBtn.className = this.checked 
+                ? 'px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
+                : 'px-4 py-2 bg-red-600 text-white rounded opacity-50 cursor-not-allowed';
+        });
+        
+        // Set up the remove unverified cars button
+        removeUnverifiedBtn.addEventListener('click', async function() {
+            try {
+                // Disable the button and show loading status
+                removeUnverifiedBtn.disabled = true;
+                removeUnverifiedBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed';
+                removeStatusEl.className = 'ml-2 text-sm text-blue-600';
+                removeStatusEl.textContent = 'Processing...';
+                
+                // Call the API to remove unverified cars
+                const result = await ApiClient.post('/remove-unverified');
+                
+                // Show success message
+                removeStatusEl.className = 'ml-2 text-sm text-green-600';
+                removeStatusEl.textContent = result.message;
+                
+                // Update the stats
+                document.getElementById('totalCars').textContent = result.new_total.toLocaleString();
+                
+                // Reset the checkbox
+                confirmRemoveEl.checked = false;
+                
+            } catch (error) {
+                console.error('Error removing unverified cars:', error);
+                removeStatusEl.className = 'ml-2 text-sm text-red-600';
+                removeStatusEl.textContent = `Error: ${error.message}`;
+            } finally {
+                // Re-enable the button
+                removeUnverifiedBtn.disabled = !confirmRemoveEl.checked;
+                removeUnverifiedBtn.className = confirmRemoveEl.checked 
+                    ? 'px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
+                    : 'px-4 py-2 bg-red-600 text-white rounded opacity-50 cursor-not-allowed';
+            }
+        });
+        
+        // Set up the update exchange rates button
+        updateRatesBtn.addEventListener('click', async function() {
+            try {
+                // Disable the button and show loading status
+                updateRatesBtn.disabled = true;
+                updateRatesBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed';
+                updateRatesStatusEl.className = 'ml-2 text-sm text-blue-600';
+                updateRatesStatusEl.textContent = 'Updating...';
+                
+                // Call the API to update exchange rates
+                const result = await ApiClient.post('/update-rates');
+                
+                // Show success message
+                updateRatesStatusEl.className = 'ml-2 text-sm text-green-600';
+                updateRatesStatusEl.textContent = result.message;
+                
+                // Update the currency stats
+                document.getElementById('currencyStatus').textContent = result.status;
+                document.getElementById('currencyLastUpdated').textContent = result.last_updated || 'Never';
+                document.getElementById('currencyFallback').textContent = result.using_fallback ? 'Yes' : 'No';
+                
+            } catch (error) {
+                console.error('Error updating exchange rates:', error);
+                updateRatesStatusEl.className = 'ml-2 text-sm text-red-600';
+                updateRatesStatusEl.textContent = `Error: ${error.message}`;
+            } finally {
+                // Re-enable the button
+                updateRatesBtn.disabled = false;
+                updateRatesBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+            }
+        });
+        
+        // Set up the confirm checkbox for invalid URLs
+        confirmRemoveInvalidEl.addEventListener('change', function() {
+            removeInvalidUrlsBtn.disabled = !this.checked;
+            removeInvalidUrlsBtn.className = this.checked 
+                ? 'px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
+                : 'px-4 py-2 bg-red-600 text-white rounded opacity-50 cursor-not-allowed';
+        });
+        
+        // Set up the remove invalid URLs button
+        removeInvalidUrlsBtn.addEventListener('click', async function() {
+            try {
+                // Disable the button and show loading status
+                removeInvalidUrlsBtn.disabled = true;
+                removeInvalidUrlsBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed';
+                removeInvalidStatusEl.className = 'ml-2 text-sm text-blue-600';
+                removeInvalidStatusEl.textContent = 'Processing...';
+                
+                // Call the API to remove cars with invalid URLs
+                const result = await ApiClient.post('/remove-invalid-urls');
+                
+                // Show success message
+                removeInvalidStatusEl.className = 'ml-2 text-sm text-green-600';
+                removeInvalidStatusEl.textContent = result.message;
+                
+                // Update the stats
+                document.getElementById('totalCars').textContent = result.new_total.toLocaleString();
+                
+                // Reset the checkbox
+                confirmRemoveInvalidEl.checked = false;
+                
+            } catch (error) {
+                console.error('Error removing cars with invalid URLs:', error);
+                removeInvalidStatusEl.className = 'ml-2 text-sm text-red-600';
+                removeInvalidStatusEl.textContent = `Error: ${error.message}`;
+            } finally {
+                // Re-enable the button
+                removeInvalidUrlsBtn.disabled = !confirmRemoveInvalidEl.checked;
+                removeInvalidUrlsBtn.className = confirmRemoveInvalidEl.checked 
+                    ? 'px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
+                    : 'px-4 py-2 bg-red-600 text-white rounded opacity-50 cursor-not-allowed';
+            }
+        });
+        
+        // Set up the check invalid URLs button
+        checkInvalidUrlsBtn.addEventListener('click', async function() {
+            try {
+                // Disable the button and show loading status
+                checkInvalidUrlsBtn.disabled = true;
+                checkInvalidUrlsBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed';
+                checkUrlsStatusEl.className = 'ml-2 text-sm text-blue-600';
+                checkUrlsStatusEl.textContent = 'Checking URLs...';
+                
+                // Call the API to check for invalid URLs
+                const result = await ApiClient.post('/check-invalid-urls');
+                
+                // Show success message
+                checkUrlsStatusEl.className = 'ml-2 text-sm text-green-600';
+                checkUrlsStatusEl.textContent = result.message;
+                
+                // Update the stats if needed
+                if (result.invalid > 0) {
+                    // Refresh the stats to show the updated counts
+                    const statsData = await ApiClient.get('/stats');
+                    document.getElementById('totalCars').textContent = statsData.total_cars.toLocaleString();
+                    document.getElementById('carsWithUrl').textContent = statsData.cars_with_url.toLocaleString();
+                    document.getElementById('carsWithoutUrl').textContent = statsData.cars_without_url.toLocaleString();
+                }
+                
+            } catch (error) {
+                console.error('Error checking invalid URLs:', error);
+                checkUrlsStatusEl.className = 'ml-2 text-sm text-red-600';
+                checkUrlsStatusEl.textContent = `Error: ${error.message}`;
+            } finally {
+                // Re-enable the button
+                checkInvalidUrlsBtn.disabled = false;
+                checkInvalidUrlsBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+            }
+        });
+        
+        // Set up the scrape cars button
+        scrapeCarsBtn.addEventListener('click', async function() {
+            try {
+                // Validate inputs
+                const urlsText = listingUrlsEl.value.trim();
+                if (!urlsText) {
+                    scrapeStatusEl.className = 'ml-2 text-sm text-red-600';
+                    scrapeStatusEl.textContent = 'Please enter at least one URL';
+                    return;
+                }
+                
+                // Parse URLs (one per line)
+                const urls = urlsText.split('\n')
+                    .map(url => url.trim())
+                    .filter(url => url.length > 0);
+                
+                if (urls.length === 0) {
+                    scrapeStatusEl.className = 'ml-2 text-sm text-red-600';
+                    scrapeStatusEl.textContent = 'Please enter at least one valid URL';
+                    return;
+                }
+                
+                // Get max cars
+                const maxCars = parseInt(maxCarsEl.value);
+                if (isNaN(maxCars) || maxCars < 1) {
+                    scrapeStatusEl.className = 'ml-2 text-sm text-red-600';
+                    scrapeStatusEl.textContent = 'Please enter a valid number for maximum cars';
+                    return;
+                }
+                
+                // Disable the button and show loading status
+                scrapeCarsBtn.disabled = true;
+                scrapeCarsBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed';
+                scrapeStatusEl.className = 'ml-2 text-sm text-blue-600';
+                scrapeStatusEl.textContent = 'Scraping cars... This may take a while.';
+                
+                // Call the API to scrape cars
+                const result = await ApiClient.post('/scrape-cars', {
+                    urls: urls,
+                    max_cars: maxCars
+                });
+                
+                // Show success message
+                scrapeStatusEl.className = 'ml-2 text-sm text-green-600';
+                scrapeStatusEl.textContent = result.message;
+                
+                // Refresh the stats to show the updated counts
+                const statsData = await ApiClient.get('/stats');
+                document.getElementById('totalCars').textContent = statsData.total_cars.toLocaleString();
+                document.getElementById('carsWithUrl').textContent = statsData.cars_with_url.toLocaleString();
+                document.getElementById('carsWithoutUrl').textContent = statsData.cars_without_url.toLocaleString();
+                
+            } catch (error) {
+                console.error('Error scraping cars:', error);
+                scrapeStatusEl.className = 'ml-2 text-sm text-red-600';
+                scrapeStatusEl.textContent = `Error: ${error.message}`;
+            } finally {
+                // Re-enable the button
+                scrapeCarsBtn.disabled = false;
+                scrapeCarsBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+            }
+        });
+    });
+</script>
+{% endblock %} 

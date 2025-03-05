@@ -1,0 +1,36 @@
+.animate-fade {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.info-card {
+    @apply bg-gray-50 rounded-lg p-4 shadow;
+}
+
+.card-title {
+    @apply text-xl font-semibold mb-3 text-gray-800;
+}
+
+.card-content {
+    @apply space-y-2;
+}
+
+.info-row {
+    @apply flex justify-between items-center py-1 border-b border-gray-200;
+}
+
+.info-label {
+    @apply text-gray-600 font-medium;
+}
+
+.info-value {
+    @apply text-gray-800;
+}
+
+.equipment-item {
+    @apply bg-blue-50 text-blue-800 px-3 py-1 rounded-full text-sm;
+} 

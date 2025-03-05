@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Car Scraper | CarAgentApp{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Car Scraper</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Scraper Configuration -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Scraper Configuration</h2>
+            
+            <form id="scraperForm" class="space-y-4">
+                <div>
+                    <label for="listingUrls" class="block text-sm font-medium text-gray-700 mb-1">Listing URLs (one per line)</label>
+                    <textarea id="listingUrls" rows="8" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="https://example.com/cars/page1&#10;https://example.com/cars/page2"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="maxCars" class="block text-sm font-medium text-gray-700 mb-1">Maximum Cars</label>
+                        <input type="number" id="maxCars" value="1000" min="1" max="10000" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="minDelay" class="block text-sm font-medium text-gray-700 mb-1">Min Delay (seconds)</label>
+                        <input type="number" id="minDelay" value="1" min="0.1" max="10" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="maxDelay" class="block text-sm font-medium text-gray-700 mb-1">Max Delay (seconds)</label>
+                        <input type="number" id="maxDelay" value="3" min="0.5" max="15" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="maxImages" class="block text-sm font-medium text-gray-700 mb-1">Max Images per Car</label>
+                        <input type="number" id="maxImages" value="10" min="1" max="50" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                
+                <div class="flex items-center">
+                    <input type="checkbox" id="skipSold" class="mr-2" checked>
+                    <label for="skipSold" class="text-sm text-gray-700">Skip sold cars</label>
+                </div>
+                
+                <div class="flex items-center">
+                    <input type="checkbox" id="downloadImages" class="mr-2" checked>
+                    <label for="downloadImages" class="text-sm text-gray-700">Download images</label>
+                </div>
+                
+                <button type="submit" id="startScraperBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Start Scraping
+                </button>
+            </form>
+            
+            <div id="scraperStatus" class="mt-4 hidden"></div>
+        </div>
+        
+        <!-- Scraper Stats -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Scraper Statistics</h2>
+            
+            <div id="scraperStats" class="space-y-4">
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <span class="font-medium">Total Cars in Database:</span>
+                    <span id="totalCars" class="font-bold">Loading...</span>
+                </div>
+                
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <span class="font-medium">Cars with Source URLs:</span>
+                    <span id="carsWithUrl" class="font-bold">Loading...</span>
+                </div>
+                
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <span class="font-medium">Cars without Source URLs:</span>
+                    <span id="carsWithoutUrl" class="font-bold">Loading...</span>
+                </div>
+                
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <span class="font-medium">Cars with Images:</span>
+                    <span id="carsWithImages" class="font-bold">Loading...</span>
+                </div>
+                
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <span class="font-medium">Total Images:</span>
+                    <span id="totalImages" class="font-bold">Loading...</span>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <h3 class="font-medium mb-2">Recent Scraping Activity</h3>
+                <div id="recentActivity" class="border rounded overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cars Added</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Images</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="activityLog">
+                            <tr>
+                                <td class="px-4 py-2 text-sm text-gray-500" colspan="3">No recent activity</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scraper Log -->
+    <div class="mt-8 bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Scraper Log</h2>
+            <button id="clearLogBtn" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                Clear Log
+            </button>
+        </div>
+        
+        <div id="scraperLog" class="h-64 overflow-y-auto p-3 bg-gray-50 font-mono text-sm rounded">
+            <div class="text-gray-500">Scraper log will appear here...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Get elements
+        const scraperForm = document.getElementById('scraperForm');
+        const startScraperBtn = document.getElementById('startScraperBtn');
+        const scraperStatus = document.getElementById('scraperStatus');
+        const scraperLog = document.getElementById('scraperLog');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+        
+        // Load initial stats
+        await loadStats();
+        
+        // Set up form submission
+        scraperForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const listingUrls = document.getElementById('listingUrls').value.trim();
+            const maxCars = parseInt(document.getElementById('maxCars').value);
+            const minDelay = parseFloat(document.getElementById('minDelay').value);
+            const maxDelay = parseFloat(document.getElementById('maxDelay').value);
+            const maxImages = parseInt(document.getElementById('maxImages').value);
+            const skipSold = document.getElementById('skipSold').checked;
+            const downloadImages = document.getElementById('downloadImages').checked;
+            
+            // Validate inputs
+            if (!listingUrls) {
+                showStatus('Please enter at least one URL', 'error');
+                return;
+            }
+            
+            // Parse URLs (one per line)
+            const urls = listingUrls.split('\n')
+                .map(url => url.trim())
+                .filter(url => url.length > 0);
+            
+            if (urls.length === 0) {
+                showStatus('Please enter at least one valid URL', 'error');
+                return;
+            }
+            
+            // Disable the button and show loading status
+            startScraperBtn.disabled = true;
+            startScraperBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed';
+            showStatus('Starting scraper...', 'info');
+            
+            // Add to log
+            addToLog('Starting scraper with the following configuration:');
+            addToLog(`URLs: ${urls.length} URLs`);
+            addToLog(`Max Cars: ${maxCars}`);
+            addToLog(`Delay Range: ${minDelay}s - ${maxDelay}s`);
+            addToLog(`Max Images: ${maxImages}`);
+            addToLog(`Skip Sold Cars: ${skipSold}`);
+            addToLog(`Download Images: ${downloadImages}`);
+            addToLog('---');
+            
+            try {
+                // Call the API to start scraping
+                const response = await fetch('/admin/scrape-cars', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        urls: urls,
+                        max_cars: maxCars,
+                        min_delay: minDelay,
+                        max_delay: maxDelay,
+                        max_images: maxImages,
+                        skip_sold: skipSold,
+                        download_images: downloadImages
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // Show success message
+                showStatus(result.message, 'success');
+                addToLog(`Scraping complete. Saved ${result.cars_saved} new cars.`);
+                
+                // Add to activity log
+                addActivityEntry(new Date(), result.cars_saved, result.images_saved || 0);
+                
+                // Refresh the stats
+                await loadStats();
+                
+            } catch (error) {
+                console.error('Error scraping cars:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+                addToLog(`ERROR: ${error.message}`);
+            } finally {
+                // Re-enable the button
+                startScraperBtn.disabled = false;
+                startScraperBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+            }
+        });
+        
+        // Set up clear log button
+        clearLogBtn.addEventListener('click', function() {
+            scraperLog.innerHTML = '<div class="text-gray-500">Log cleared.</div>';
+        });
+        
+        // Helper function to show status
+        function showStatus(message, type = 'info') {
+            scraperStatus.textContent = message;
+            scraperStatus.className = 'mt-4 p-3 rounded';
+            
+            if (type === 'error') {
+                scraperStatus.classList.add('bg-red-100', 'text-red-800');
+            } else if (type === 'success') {
+                scraperStatus.classList.add('bg-green-100', 'text-green-800');
+            } else {
+                scraperStatus.classList.add('bg-blue-100', 'text-blue-800');
+            }
+            
+            scraperStatus.classList.remove('hidden');
+        }
+        
+        // Helper function to add to log
+        function addToLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'mb-1';
+            logEntry.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> ${message}`;
+            
+            scraperLog.appendChild(logEntry);
+            scraperLog.scrollTop = scraperLog.scrollHeight;
+        }
+        
+        // Helper function to add activity entry
+        function addActivityEntry(date, carsAdded, imagesAdded) {
+            const activityLog = document.getElementById('activityLog');
+            
+            // Remove "No recent activity" row if present
+            if (activityLog.innerHTML.includes('No recent activity')) {
+                activityLog.innerHTML = '';
+            }
+            
+            // Add new entry at the top
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-4 py-2 text-sm">${date.toLocaleString()}</td>
+                <td class="px-4 py-2 text-sm">${carsAdded}</td>
+                <td class="px-4 py-2 text-sm">${imagesAdded}</td>
+            `;
+            
+            activityLog.insertBefore(row, activityLog.firstChild);
+        }
+        
+        // Helper function to load stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/admin/stats');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const stats = await response.json();
+                
+                // Update stats display
+                document.getElementById('totalCars').textContent = stats.total_cars.toLocaleString();
+                document.getElementById('carsWithUrl').textContent = stats.cars_with_url.toLocaleString();
+                document.getElementById('carsWithoutUrl').textContent = stats.cars_without_url.toLocaleString();
+                document.getElementById('carsWithImages').textContent = (stats.cars_with_images || 0).toLocaleString();
+                document.getElementById('totalImages').textContent = (stats.total_images || 0).toLocaleString();
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+    });
+</script>
+{% endblock %} 

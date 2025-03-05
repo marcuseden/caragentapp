@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin API Test | CarAgentApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { padding: 8px 16px; margin: 5px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow: auto; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Top Navigation Bar -->
+    <nav class="bg-blue-600 text-white shadow-md">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-3">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-xl font-bold hover:text-blue-200">CarAgentApp</a>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="/" class="hover:text-blue-200">Car Listings</a>
+                    <a href="/opportunities" class="hover:text-blue-200">Opportunities</a>
+                    <a href="/admin" class="hover:text-blue-200">Admin</a>
+                    <a href="/about" class="hover:text-blue-200">About</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6">Admin API Test</h1>
+        
+        <div class="mb-6">
+            <a href="/admin" class="text-blue-600 hover:underline">← Back to Admin Dashboard</a>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-2 mb-6">
+                <button id="testStats" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Test /stats</button>
+                <button id="testRemoveUnverified" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Test /remove-unverified</button>
+                <button id="testUpdateRates" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Test /update-rates</button>
+                <button id="testCheckInvalidUrls" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">Test /check-invalid-urls</button>
+                <button id="testRemoveInvalidUrls" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">Test /remove-invalid-urls</button>
+            </div>
+            
+            <h2 class="text-xl font-semibold mb-2">Response:</h2>
+            <pre id="response" class="mb-6">Click a button to test an API endpoint</pre>
+            
+            <h2 class="text-xl font-semibold mb-2">Debug Info:</h2>
+            <pre id="debug">
+Current URL: <span id="currentUrl"></span>
+API Base: <span id="apiBase"></span>
+            </pre>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p>&copy; 2023 CarAgentApp. All rights reserved.</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="/contact" class="hover:text-blue-300">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const responseEl = document.getElementById('response');
+            const currentUrlEl = document.getElementById('currentUrl');
+            const apiBaseEl = document.getElementById('apiBase');
+            
+            // Show debug info
+            currentUrlEl.textContent = window.location.href;
+            
+            // Determine API base URL
+            const path = window.location.pathname;
+            const apiBase = path.includes('/admin') ? '/admin' : '';
+            apiBaseEl.textContent = apiBase;
+            
+            // Helper function to make API requests
+            async function testEndpoint(endpoint, method = 'GET') {
+                const fullUrl = `${apiBase}${endpoint}`;
+                responseEl.textContent = `Fetching ${method} ${fullUrl}...`;
+                try {
+                    const response = await fetch(fullUrl, { method });
+                    
+                    // Show response status
+                    responseEl.textContent = `Status: ${response.status} ${response.statusText}\n\n`;
+                    
+                    try {
+                        const data = await response.json();
+                        responseEl.textContent += JSON.stringify(data, null, 2);
+                        responseEl.className = response.ok ? 'success' : 'error';
+                    } catch (jsonError) {
+                        // If not JSON, show text
+                        const text = await response.text();
+                        responseEl.textContent += text;
+                        responseEl.className = 'error';
+                    }
+                } catch (error) {
+                    responseEl.textContent = `Error: ${error.message}`;
+                    responseEl.className = 'error';
+                }
+            }
+            
+            // Add event listeners to buttons
+            document.getElementById('testStats').addEventListener('click', () => {
+                testEndpoint('/stats');
+            });
+            
+            document.getElementById('testRemoveUnverified').addEventListener('click', () => {
+                testEndpoint('/remove-unverified', 'POST');
+            });
+            
+            document.getElementById('testUpdateRates').addEventListener('click', () => {
+                testEndpoint('/update-rates', 'POST');
+            });
+            
+            document.getElementById('testCheckInvalidUrls').addEventListener('click', () => {
+                testEndpoint('/check-invalid-urls', 'POST');
+            });
+            
+            document.getElementById('testRemoveInvalidUrls').addEventListener('click', () => {
+                testEndpoint('/remove-invalid-urls', 'POST');
+            });
+        });
+    </script>
+</body>
+</html> 

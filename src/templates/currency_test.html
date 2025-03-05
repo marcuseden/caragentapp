@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Currency Conversion | CarAgentApp{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Currency Conversion</h1>
+    
+    <div id="status" class="mb-4 p-4 bg-blue-100 text-blue-800 rounded-lg">
+        Loading currency service status...
+    </div>
+    
+    <div id="conversionTest" class="mt-8">
+        <h2 class="text-xl font-semibold mb-4">Conversion Examples</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white p-4 rounded shadow">
+                <h3 class="font-medium mb-2">DKK to SEK</h3>
+                <div id="dkkToSek" class="space-y-2"></div>
+            </div>
+            <div class="bg-white p-4 rounded shadow">
+                <h3 class="font-medium mb-2">SEK to DKK</h3>
+                <div id="sekToDkk" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        const statusEl = document.getElementById('status');
+        const dkkToSekEl = document.getElementById('dkkToSek');
+        const sekToDkkEl = document.getElementById('sekToDkk');
+        
+        try {
+            // Fetch currency service status
+            const response = await fetch('/api/currency/status');
+            const data = await response.json();
+            
+            if (data.status === 'ok') {
+                // Display service info
+                const info = data.service_info;
+                statusEl.innerHTML = `
+                    <div class="font-semibold">Currency Service Status: <span class="text-green-600">OK</span></div>
+                    <div>Last Updated: ${new Date(info.last_updated).toLocaleString()}</div>
+                    <div>Using Fallback Rates: ${info.using_fallback ? 'Yes' : 'No'}</div>
+                    <div>Available Currencies: ${info.available_currencies.join(', ')}</div>
+                    <div class="mt-2">
+                        <div>Example Rates:</div>
+                        <div>1 DKK = ${info.example_rates.SEK} SEK</div>
+                        <div>1 DKK = ${info.example_rates.EUR} EUR</div>
+                        <div>1 DKK = ${info.example_rates.USD} USD</div>
+                    </div>
+                `;
+                
+                // Display conversion examples
+                const testAmounts = [1000, 5000, 10000, 50000, 100000];
+                
+                dkkToSekEl.innerHTML = testAmounts.map(amount => {
+                    const converted = amount * info.example_rates.SEK;
+                    return `<div class="py-1 border-b">${amount.toLocaleString()} DKK = <span class="font-semibold">${converted.toLocaleString()} SEK</span></div>`;
+                }).join('');
+                
+                sekToDkkEl.innerHTML = testAmounts.map(amount => {
+                    const converted = amount / info.example_rates.SEK;
+                    return `<div class="py-1 border-b">${amount.toLocaleString()} SEK = <span class="font-semibold">${converted.toFixed(2).toLocaleString()} DKK</span></div>`;
+                }).join('');
+            } else {
+                statusEl.innerHTML = `<div class="text-red-600">Error: Currency service not available</div>`;
+            }
+        } catch (error) {
+            console.error('Error fetching currency status:', error);
+            statusEl.innerHTML = `<div class="text-red-600">Error: ${error.message}</div>`;
+        }
+    });
+</script>
+{% endblock %} 

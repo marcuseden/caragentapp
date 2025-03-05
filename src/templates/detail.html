@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}Car Details | CarAgentApp{% endblock %}
+
+{% block styles %}
+<style>
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #edf2f7;
+    }
+    .info-label {
+        color: #4a5568;
+        font-weight: 500;
+    }
+    .info-value {
+        color: #1a202c;
+    }
+    .equipment-item {
+        background-color: #ebf8ff;
+        color: #2b6cb0;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        display: inline-block;
+        margin: 0.25rem;
+    }
+    .source-link {
+        color: #4299e1;
+        text-decoration: underline;
+        font-size: 0.875rem;
+    }
+    .source-link:hover {
+        color: #2b6cb0;
+    }
+    .missing-data {
+        color: #a0aec0;
+        font-style: italic;
+    }
+    .price-tooltip {
+        position: relative;
+        cursor: help;
+    }
+    
+    .price-tooltip .tooltip-text {
+        visibility: hidden;
+        width: 200px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .price-tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <a href="/" class="inline-block mb-4 text-blue-600 hover:text-blue-800">← Back to List</a>
+    
+    <div id="status" class="mb-4 p-4 bg-blue-100 text-blue-800 rounded-lg">
+        Loading car details...
+    </div>
+    
+    <div id="carDetails" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Car Images -->
+            <div class="md:col-span-2">
+                <div id="mainImage" class="bg-white p-4 rounded-lg shadow-md mb-4 h-96 flex items-center justify-center">
+                    <img id="primaryImage" src="" alt="Car Image" class="max-h-full max-w-full object-contain">
+                </div>
+                
+                <div id="thumbnails" class="grid grid-cols-5 gap-2">
+                    <!-- Thumbnails will be added here -->
+                </div>
+            </div>
+            
+            <!-- Car Info -->
+            <div>
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <h1 id="carTitle" class="text-2xl font-bold mb-2"></h1>
+                    
+                    <div class="flex items-center mb-4">
+                        <span id="carYear" class="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm mr-2"></span>
+                        <span id="carMileage" class="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm"></span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="price-tooltip">
+                            <h2 id="carPrice" class="text-3xl font-bold text-blue-600"></h2>
+                            <span id="priceTooltip" class="tooltip-text">Loading currency conversion...</span>
+                        </div>
+                        <p id="carPriceNote" class="text-sm text-gray-500 mt-1"></p>
+                    </div>
+                    
+                    <div id="carLocation" class="flex items-center text-gray-600 mb-4">
+                        <svg class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span></span>
+                    </div>
+                    
+                    <div id="carSource" class="text-right mt-4">
+                        <a id="sourceLink" href="#" target="_blank" class="source-link">View Original Listing</a>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Vehicle Details</h2>
+                    
+                    <div id="carDetails" class="space-y-2">
+                        <!-- Car details will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Equipment -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+            <h2 class="text-xl font-semibold mb-4">Equipment & Features</h2>
+            
+            <div id="carEquipment" class="flex flex-wrap">
+                <!-- Equipment items will be added here -->
+            </div>
+        </div>
+        
+        <!-- Similar Cars -->
+        <div id="similarCarsContainer" class="mt-8 hidden">
+            <h2 class="text-xl font-semibold mb-4">Similar Cars</h2>
+            
+            <div id="similarCars" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Similar cars will be added here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Get elements
+        const statusEl = document.getElementById('status');
+        const carDetailsEl = document.getElementById('carDetails');
+        
+        try {
+            // Get car ID from URL
+            const pathParts = window.location.pathname.split('/');
+            const carId = pathParts[pathParts.length - 1];
+            
+            // Fetch car details
+            const response = await fetch(`/api/car/${carId}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const car = await response.json();
+            
+            // Update page with car details
+            displayCarDetails(car);
+            
+            // Hide status and show car details
+            statusEl.classList.add('hidden');
+            carDetailsEl.classList.remove('hidden');
+            
+            // Load similar cars
+            await loadSimilarCars(car.brand, car.model, car._id);
+            
+        } catch (error) {
+            console.error('Error loading car details:', error);
+            statusEl.className = 'mb-4 p-4 bg-red-100 text-red-800 rounded-lg';
+            statusEl.textContent = `Error loading car details: ${error.message}`;
+        }
+    });
+    
+    function displayCarDetails(car) {
+        // Set car title
+        document.getElementById('carTitle').textContent = `${car.brand} ${car.model}`;
+        document.title = `${car.brand} ${car.model} | CarAgentApp`;
+        
+        // Set year and mileage
+        document.getElementById('carYear').textContent = car.year || 'N/A';
+        document.getElementById('carMileage').textContent = car.mileage ? `${new Intl.NumberFormat('da-DK').format(car.mileage)} km` : 'N/A';
+        
+        // Set price
+        const priceEl = document.getElementById('carPrice');
+        const priceTooltipEl = document.getElementById('priceTooltip');
+        const priceNoteEl = document.getElementById('carPriceNote');
+        
+        if (car.cash_price) {
+            // Format price with currency
+            const currency = car.currency || 'DKK';
+            priceEl.textContent = `${new Intl.NumberFormat('da-DK').format(car.cash_price)} ${currency}`;
+            
+            // Add price in other currencies for tooltip
+            const sek_price = car.cash_price_sek || (car.cash_price * 1.4123);
+            const eur_price = car.cash_price_eur || (car.cash_price * 0.134);
+            
+            priceTooltipEl.textContent = `
+                ${new Intl.NumberFormat('da-DK').format(sek_price)} SEK
+                ${new Intl.NumberFormat('da-DK').format(eur_price)} EUR
+            `;
+            
+            // Add price note if available
+            if (car.price_note) {
+                priceNoteEl.textContent = car.price_note;
+            } else {
+                priceNoteEl.textContent = 'Cash price including all fees';
+            }
+        } else {
+            priceEl.textContent = 'Price not available';
+            priceTooltipEl.textContent = 'No price information';
+            priceNoteEl.textContent = '';
+        }
+        
+        // Set location
+        const locationEl = document.getElementById('carLocation').querySelector('span');
+        locationEl.textContent = car.location || (car.country ? car.country.charAt(0).toUpperCase() + car.country.slice(1) : 'Location not available');
+        
+        // Set source link
+        const sourceLinkEl = document.getElementById('sourceLink');
+        if (car.source_url) {
+            sourceLinkEl.href = car.source_url;
+            sourceLinkEl.textContent = 'View Original Listing';
+        } else {
+            sourceLinkEl.href = '#';
+            sourceLinkEl.textContent = 'Original listing not available';
+            sourceLinkEl.classList.add('text-gray-400');
+            sourceLinkEl.classList.remove('source-link');
+            sourceLinkEl.onclick = (e) => e.preventDefault();
+        }
+        
+        // Set images
+        const primaryImageEl = document.getElementById('primaryImage');
+        const thumbnailsEl = document.getElementById('thumbnails');
+        
+        if (car.images && car.images.length > 0) {
+            // Set primary image
+            const primaryImage = car.images.find(img => img.is_primary) || car.images[0];
+            primaryImageEl.src = primaryImage.url || '/static/images/no-image.png';
+            primaryImageEl.alt = `${car.brand} ${car.model}`;
+            
+            // Add thumbnails
+            thumbnailsEl.innerHTML = '';
+            car.images.forEach((image, index) => {
+                const thumbnailDiv = document.createElement('div');
+                thumbnailDiv.className = 'bg-white p-2 rounded shadow cursor-pointer h-20 flex items-center justify-center';
+                thumbnailDiv.onclick = () => {
+                    primaryImageEl.src = image.url;
+                };
+                
+                const thumbnailImg = document.createElement('img');
+                thumbnailImg.src = image.url;
+                thumbnailImg.alt = `${car.brand} ${car.model} - Image ${index + 1}`;
+                thumbnailImg.className = 'max-h-full max-w-full object-contain';
+                
+                thumbnailDiv.appendChild(thumbnailImg);
+                thumbnailsEl.appendChild(thumbnailDiv);
+            });
+        } else {
+            // No images available
+            primaryImageEl.src = '/static/images/no-image.png';
+            primaryImageEl.alt = 'No image available';
+            thumbnailsEl.innerHTML = '';
+        }
+        
+        // Set car details
+        const carDetailsEl = document.getElementById('carDetails');
+        carDetailsEl.innerHTML = '';
+        
+        // Add standard details
+        const details = [
+            { label: 'Brand', value: car.brand },
+            { label: 'Model', value: car.model },
+            { label: 'Year', value: car.year },
+            { label: 'Mileage', value: car.mileage ? `${new Intl.NumberFormat('da-DK').format(car.mileage)} km` : 'N/A' },
+            { label: 'Fuel Type', value: car.fuel_type || 'N/A' },
+            { label: 'Transmission', value: car.transmission || 'N/A' },
+            { label: 'Engine', value: car.engine || 'N/A' },
+            { label: 'Power', value: car.power ? `${car.power} hp` : 'N/A' },
+            { label: 'Color', value: car.color || 'N/A' },
+            { label: 'Interior', value: car.interior || 'N/A' }
+        ];
+        
+        details.forEach(detail => {
+            const row = document.createElement('div');
+            row.className = 'info-row';
+            
+            const label = document.createElement('span');
+            label.className = 'info-label';
+            label.textContent = detail.label;
+            
+            const value = document.createElement('span');
+            value.className = detail.value === 'N/A' ? 'info-value missing-data' : 'info-value';
+            value.textContent = detail.value;
+            
+            row.appendChild(label);
+            row.appendChild(value);
+            carDetailsEl.appendChild(row);
+        });
+        
+        // Add any additional details from the car object
+        for (const [key, value] of Object.entries(car)) {
+            // Skip already displayed or internal properties
+            if (['_id', 'brand', 'model', 'year', 'mileage', 'fuel_type', 'transmission', 
+                 'engine', 'power', 'color', 'interior', 'cash_price', 'currency', 
+                 'price_note', 'location', 'country', 'source_url', 'images', 'equipment'].includes(key)) {
+                continue;
+            }
+            
+            // Skip empty values, arrays, and objects
+            if (value === null || value === undefined || value === '' || 
+                Array.isArray(value) || typeof value === 'object') {
+                continue;
+            }
+            
+            const row = document.createElement('div');
+            row.className = 'info-row';
+            
+            const label = document.createElement('span');
+            label.className = 'info-label';
+            label.textContent = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            const valueEl = document.createElement('span');
+            valueEl.className = 'info-value';
+            valueEl.textContent = value;
+            
+            row.appendChild(label);
+            row.appendChild(valueEl);
+            carDetailsEl.appendChild(row);
+        }
+        
+        // Set equipment
+        const equipmentEl = document.getElementById('carEquipment');
+        equipmentEl.innerHTML = '';
+        
+        if (car.equipment && car.equipment.length > 0) {
+            car.equipment.forEach(item => {
+                const equipmentItem = document.createElement('span');
+                equipmentItem.className = 'equipment-item';
+                equipmentItem.textContent = item;
+                equipmentEl.appendChild(equipmentItem);
+            });
+        } else {
+            const noEquipment = document.createElement('p');
+            noEquipment.className = 'text-gray-500 italic';
+            noEquipment.textContent = 'No equipment information available';
+            equipmentEl.appendChild(noEquipment);
+        }
+    }
+    
+    async function loadSimilarCars(brand, model, id) {
+        try {
+            const response = await fetch(`/api/cars/similar?brand=${encodeURIComponent(brand)}&model=${encodeURIComponent(model)}&id=${id}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const similarCars = await response.json();
+            
+            if (similarCars.length > 0) {
+                // Show similar cars section
+                const container = document.getElementById('similarCarsContainer');
+                const carsList = document.getElementById('similarCars');
+                
+                container.classList.remove('hidden');
+                
+                // Find min and max prices for highlighting
+                const prices = similarCars.map(c => c.cash_price);
+                const minPrice = Math.min(...prices);
+                const maxPrice = Math.max(...prices);
+                
+                carsList.innerHTML = similarCars.map(c => {
+                    // Get currency service to convert prices
+                    const sek_price = c.cash_price_sek || 
+                        `${new Intl.NumberFormat('da-DK').format(c.cash_price * 1.4123)} SEK`;
+                    
+                    return `
+                        <a href="/car/${c._id}" class="block border rounded-lg p-4 hover:bg-gray-50">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-semibold">${c.year} ${c.brand} ${c.model}</h3>
+                                    <p class="text-sm text-gray-600">${c.mileage ? `${new Intl.NumberFormat('da-DK').format(c.mileage)} km` : 'N/A'}</p>
+                                    <p class="text-sm text-gray-500">${c.country.charAt(0).toUpperCase() + c.country.slice(1)}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold ${c.cash_price === minPrice ? 'text-green-600' : c.cash_price === maxPrice ? 'text-red-600' : 'text-blue-600'}">
+                                        ${sek_price}
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        ${new Intl.NumberFormat('da-DK').format(c.cash_price)} DKK
+                                    </p>
+                                    ${c.cash_price === minPrice ? '<span class="text-xs text-green-600">Best price</span>' : ''}
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+            }
+        } catch (error) {
+            console.error('Error loading similar cars:', error);
+        }
+    }
+</script>
+{% endblock %} 

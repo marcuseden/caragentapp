@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Price Opportunities | CarAgentApp{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Price Opportunities</h1>
+    
+    <div id="status" class="mb-6 p-4 bg-blue-100 text-blue-800 rounded-lg">
+        Finding price opportunities across different markets...
+    </div>
+    
+    <div id="opportunities" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Opportunities will be loaded here -->
+    </div>
+    
+    <div id="noOpportunities" class="hidden text-center py-8 text-gray-500">
+        No significant price differences found at the moment. Check back later!
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        const statusEl = document.getElementById('status');
+        const opportunitiesEl = document.getElementById('opportunities');
+        const noOpportunitiesEl = document.getElementById('noOpportunities');
+        
+        try {
+            // Fetch all cars
+            const response = await fetch('/api/cars');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const cars = await response.json();
+            
+            // Find arbitrage opportunities
+            const opportunities = findArbitrageOpportunities(cars);
+            
+            // Hide loading status
+            statusEl.classList.add('hidden');
+            
+            // Display opportunities or no opportunities message
+            if (opportunities.length > 0) {
+                displayOpportunities(opportunities);
+            } else {
+                noOpportunitiesEl.classList.remove('hidden');
+            }
+            
+        } catch (error) {
+            console.error('Error loading opportunities:', error);
+            statusEl.className = 'mb-6 p-4 bg-red-100 text-red-800 rounded-lg';
+            statusEl.textContent = `Error: ${error.message}`;
+        }
+        
+        function displayOpportunities(opportunities) {
+            opportunitiesEl.innerHTML = opportunities.map(opp => {
+                const lowestPrice = opp.cars.reduce((min, car) => 
+                    car.priceValue < min.priceValue ? car : min, opp.cars[0]);
+                const highestPrice = opp.cars.reduce((max, car) => 
+                    car.priceValue > max.priceValue ? car : max, opp.cars[0]);
+                
+                const priceDiff = ((highestPrice.priceValue - lowestPrice.priceValue) / highestPrice.priceValue * 100).toFixed(1);
+                
+                return `
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="font-bold text-lg">${opp.brand} ${opp.model} (${opp.year})</h3>
+                    <p class="text-green-600 font-bold">Price difference: ${priceDiff}%</p>
+                    <div class="mt-2 space-y-2">
+                        ${opp.cars.map(car => `
+                            <a href="/car/${car.id}" class="block hover:bg-gray-50 p-2 rounded">
+                                <div class="flex justify-between">
+                                    <span>${car.country}</span>
+                                    <span class="font-bold ${car.id === lowestPrice.id ? 'text-green-600' : car.id === highestPrice.id ? 'text-red-600' : ''}">${car.price}</span>
+                                </div>
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+        
+        function findArbitrageOpportunities(cars) {
+            // Group cars by brand, model, and year
+            const groups = {};
+            
+            cars.forEach(car => {
+                if (!car.priceValue) return; // Skip cars without price value
+                
+                const key = `${car.brand}|${car.model}|${car.year}`;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(car);
+            });
+            
+            // Find groups with significant price differences across countries
+            const opportunities = [];
+            
+            for (const [key, groupCars] of Object.entries(groups)) {
+                // Only consider groups with cars from different countries
+                const countries = new Set(groupCars.map(car => car.country));
+                if (countries.size < 2) continue;
+                
+                // Find min and max prices
+                const prices = groupCars.map(car => car.priceValue);
+                const minPrice = Math.min(...prices);
+                const maxPrice = Math.max(...prices);
+                
+                // Calculate price difference percentage
+                const priceDiff = (maxPrice - minPrice) / maxPrice;
+                
+                // If price difference is significant (>15%), add to opportunities
+                if (priceDiff > 0.15) {
+                    const [brand, model, year] = key.split('|');
+                    opportunities.push({
+                        brand,
+                        model,
+                        year,
+                        priceDifference: priceDiff,
+                        cars: groupCars
+                    });
+                }
+            }
+            
+            // Sort by price difference (highest first)
+            return opportunities.sort((a, b) => b.priceDifference - a.priceDifference);
+        }
+    });
+</script>
+{% endblock %} 
