@@ -1,4 +1,5 @@
 from typing import List
+import os
 
 URLS = {
     'denmark': [
@@ -33,9 +34,13 @@ URLS = {
 }
 
 # MongoDB configuration
-MONGODB_URI = "mongodb://localhost:27017"
-DB_NAME = "car_listings"
-COLLECTION_NAME = "listings"
+# Use environment variables for sensitive information
+MONGODB_URI = os.environ.get(
+    "MONGODB_URI", 
+    "mongodb://localhost:27017"  # Default to local for development
+)
+DB_NAME = os.environ.get("DB_NAME", "car_listings")
+COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "listings")
 
 # Rate limiting settings
 REQUESTS_PER_SECOND = 0.2  # 5 seconds between requests
@@ -59,8 +64,5 @@ BRIGHT_DATA_COUNTRY_MAP = {
 }
 
 # Proxy configuration (optional)
-def get_proxy_url(country):
-    return None
-
 def get_proxy_url(country):
     return None 

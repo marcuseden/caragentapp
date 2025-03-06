@@ -7,6 +7,7 @@ import os
 import logging
 from datetime import datetime
 from bson import ObjectId
+import asyncio
 
 # Import configuration
 import sys
@@ -487,4 +488,8 @@ async def remove_invalid_url_cars():
         }
     except Exception as e:
         logger.error(f"Error removing cars with invalid URLs: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000) 

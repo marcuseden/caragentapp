@@ -1,19 +1,26 @@
 import motor.motor_asyncio
 import logging
 from datetime import datetime
+import os
 from config import MONGODB_URI, DB_NAME, COLLECTION_NAME
 
 logger = logging.getLogger(__name__)
 
+# Create a global client instance
+client = None
+
 class MongoDB:
     def __init__(self):
-        self.client = None
         self.db = None
         self.collection = None
         
     async def init_db(self):
-        self.client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URI)
-        self.db = self.client[DB_NAME]
+        global client
+        # Reuse the client if it exists
+        if client is None:
+            client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URI)
+        
+        self.db = client[DB_NAME]
         self.collection = self.db[COLLECTION_NAME]
         
     async def store_listings(self, listings):
@@ -33,5 +40,6 @@ class MongoDB:
         return await self.collection.count_documents({})
         
     async def close(self):
-        if self.client:
-            self.client.close() 
+        # In serverless, we don't want to close the connection after each request
+        # The connection will be managed by the runtime
+        pass 
