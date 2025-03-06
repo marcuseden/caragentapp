@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{{ car.brand }} {{ car.model }} | CarAgentApp{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="/cars" class="text-blue-600 hover:text-blue-800 flex items-center">
+        <i class="fas fa-arrow-left mr-1"></i> Back to Car Listings
+    </a>
+</div>
+
+{% if error %}
+<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+    <div class="flex items-center">
+        <i class="fas fa-exclamation-circle mr-2"></i>
+        <p>{{ error }}</p>
+    </div>
+</div>
+{% endif %}
+
+{% if car %}
+<div class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div class="md:flex">
+        <div class="md:w-1/2 p-4">
+            <div class="h-64 bg-gray-200 flex items-center justify-center rounded-lg">
+                {% if car.image_url %}
+                <img src="{{ car.image_url }}" alt="{{ car.brand }} {{ car.model }}" class="h-full w-full object-cover rounded-lg">
+                {% else %}
+                <i class="fas fa-car text-6xl text-gray-400"></i>
+                {% endif %}
+            </div>
+            
+            <div class="mt-6">
+                <h2 class="text-xl font-semibold mb-2">Details</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-600">Brand</p>
+                        <p class="font-medium">{{ car.brand }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Model</p>
+                        <p class="font-medium">{{ car.model }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Year</p>
+                        <p class="font-medium">{{ car.year }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Price</p>
+                        <p class="font-medium text-green-600">{{ format_currency(car.price) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Country</p>
+                        <p class="font-medium">{{ car.source_country|capitalize }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Scraped At</p>
+                        <p class="font-medium">{{ car.scraped_at.split('T')[0] if car.scraped_at else 'Unknown' }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            {% if car.source_url %}
+            <div class="mt-6">
+                <a href="{{ car.source_url }}" target="_blank" class="btn-primary inline-flex items-center">
+                    <i class="fas fa-external-link-alt mr-1"></i> View Original Listing
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="md:w-1/2 p-4 bg-gray-50">
+            <h2 class="text-2xl font-bold mb-4">{{ car.brand }} {{ car.model }}</h2>
+            
+            <div class="mb-6">
+                <div class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                    {{ car.year }}
+                </div>
+                <div class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold ml-2">
+                    {{ format_currency(car.price) }}
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2">Description</h3>
+                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                    {% if car.details %}
+                    <p>{{ car.details }}</p>
+                    {% else %}
+                    <p class="text-gray-500">No detailed description available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div>
+                <h3 class="text-lg font-semibold mb-2">Additional Information</h3>
+                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                    <table class="w-full">
+                        <tbody>
+                            {% for key, value in car.items() %}
+                                {% if key not in ['_id', 'brand', 'model', 'year', 'price', 'details', 'source_url', 'source_country', 'scraped_at', 'image_url'] %}
+                                <tr>
+                                    <td class="py-2 text-gray-600">{{ key|capitalize }}</td>
+                                    <td class="py-2">{{ value }}</td>
+                                </tr>
+                                {% endif %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="2" class="py-2 text-gray-500 text-center">No additional information available.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="bg-white p-8 rounded-lg shadow-md text-center">
+    <div class="mb-4 text-gray-400">
+        <i class="fas fa-car-crash text-6xl"></i>
+    </div>
+    <h2 class="text-2xl font-bold mb-2">Car Not Found</h2>
+    <p class="text-gray-600 mb-6">The car you're looking for doesn't exist or has been removed.</p>
+    <a href="/cars" class="btn-primary inline-flex items-center">
+        <i class="fas fa-list mr-1"></i> Browse All Cars
+    </a>
+</div>
+{% endif %}
+{% endblock %} 

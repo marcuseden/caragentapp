@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Car Listings | CarAgentApp{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold mb-2">Car Listings</h1>
+    <p class="text-gray-600">Browse our collection of cars from around the world</p>
+</div>
+
+<div class="bg-white p-6 rounded-lg shadow-md mb-8">
+    <h2 class="text-xl font-semibold mb-4 flex items-center">
+        <i class="fas fa-filter mr-2 text-blue-600"></i> Filter Cars
+    </h2>
+    <form action="/cars" method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+            <label for="brand" class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+            <input type="text" id="brand" name="brand" value="{{ brand or '' }}" 
+                   class="input-field" placeholder="e.g. BMW, Audi">
+        </div>
+        <div>
+            <label for="min_year" class="block text-sm font-medium text-gray-700 mb-1">Min Year</label>
+            <input type="number" id="min_year" name="min_year" value="{{ min_year or '' }}" 
+                   class="input-field" placeholder="e.g. 2015">
+        </div>
+        <div>
+            <label for="max_year" class="block text-sm font-medium text-gray-700 mb-1">Max Year</label>
+            <input type="number" id="max_year" name="max_year" value="{{ max_year or '' }}" 
+                   class="input-field" placeholder="e.g. 2023">
+        </div>
+        <div class="flex items-end space-x-2">
+            <button type="submit" class="btn-primary flex items-center">
+                <i class="fas fa-search mr-1"></i> Search
+            </button>
+            <a href="/cars" class="btn-secondary flex items-center">
+                <i class="fas fa-undo mr-1"></i> Reset
+            </a>
+        </div>
+    </form>
+</div>
+
+{% if error %}
+<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+    <div class="flex items-center">
+        <i class="fas fa-exclamation-circle mr-2"></i>
+        <p>{{ error }}</p>
+    </div>
+</div>
+{% endif %}
+
+<div class="mb-4 flex justify-between items-center">
+    <p class="text-gray-600">
+        {% if total_cars > 0 %}
+        Showing {{ cars|length }} of {{ total_cars }} cars
+        {% else %}
+        No cars found
+        {% endif %}
+    </p>
+    <div>
+        <label for="limit" class="text-sm text-gray-600 mr-2">Cars per page:</label>
+        <select id="limit" class="border border-gray-300 rounded px-2 py-1" onchange="changeLimit(this.value)">
+            <option value="12" {% if limit == 12 %}selected{% endif %}>12</option>
+            <option value="24" {% if limit == 24 %}selected{% endif %}>24</option>
+            <option value="48" {% if limit == 48 %}selected{% endif %}>48</option>
+        </select>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for car in cars %}
+    <div class="card group">
+        <div class="relative">
+            <div class="h-48 bg-gray-200 flex items-center justify-center">
+                {% if car.image_url %}
+                <img src="{{ car.image_url }}" alt="{{ car.brand }} {{ car.model }}" class="h-full w-full object-cover">
+                {% else %}
+                <i class="fas fa-car text-5xl text-gray-400"></i>
+                {% endif %}
+            </div>
+            <div class="absolute top-2 right-2">
+                <span class="badge bg-blue-500 text-white">{{ car.source_country|capitalize }}</span>
+            </div>
+        </div>
+        <div class="p-4">
+            <h3 class="text-lg font-semibold group-hover:text-blue-600 transition-colors">{{ car.brand }} {{ car.model }}</h3>
+            <div class="mt-2 flex justify-between">
+                <span class="text-gray-600">{{ car.year }}</span>
+                <span class="font-bold text-green-600">{{ format_currency(car.price) }}</span>
+            </div>
+            <div class="mt-3 flex justify-between items-center">
+                <a href="/car/{{ car._id }}" class="text-blue-600 hover:text-blue-800 flex items-center">
+                    <span>View Details</span>
+                    <i class="fas fa-arrow-right ml-1 text-sm"></i>
+                </a>
+                <span class="text-xs text-gray-500">
+                    {% if car.scraped_at %}
+                    {{ car.scraped_at.split('T')[0] }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-span-full p-8 text-center">
+        <div class="mb-4 text-gray-400">
+            <i class="fas fa-car-crash text-6xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No cars found</h3>
+        <p class="text-gray-500 mb-4">Try adjusting your filters or run the scraper to add more cars.</p>
+        <a href="/scraper" class="btn-primary inline-flex items-center">
+            <i class="fas fa-spider mr-1"></i> Go to Scraper
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="mt-8 flex justify-center">
+    <nav class="inline-flex rounded-md shadow">
+        {% if page > 1 %}
+        <a href="{{ request.url.include_query_params(page=page-1) }}" 
+           class="px-4 py-2 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 flex items-center">
+            <i class="fas fa-chevron-left mr-1 text-sm"></i> Previous
+        </a>
+        {% else %}
+        <span class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-l-md text-gray-400 cursor-not-allowed flex items-center">
+            <i class="fas fa-chevron-left mr-1 text-sm"></i> Previous
+        </span>
+        {% endif %}
+        
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+            <span class="px-4 py-2 bg-blue-600 text-white border border-blue-600">
+                {{ p }}
+            </span>
+            {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+            <a href="{{ request.url.include_query_params(page=p) }}" 
+               class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50">
+                {{ p }}
+            </a>
+            {% elif p == 4 and page > 5 or p == total_pages - 3 and page < total_pages - 4 %}
+            <span class="px-4 py-2 bg-white border border-gray-300">
+                ...
+            </span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page < total_pages %}
+        <a href="{{ request.url.include_query_params(page=page+1) }}" 
+           class="px-4 py-2 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 flex items-center">
+            Next <i class="fas fa-chevron-right ml-1 text-sm"></i>
+        </a>
+        {% else %}
+        <span class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-r-md text-gray-400 cursor-not-allowed flex items-center">
+            Next <i class="fas fa-chevron-right ml-1 text-sm"></i>
+        </span>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function changeLimit(limit) {
+        const url = new URL(window.location);
+        url.searchParams.set('limit', limit);
+        url.searchParams.set('page', 1);
+        window.location = url;
+    }
+</script>
+{% endblock %} 
