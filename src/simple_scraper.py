@@ -8,6 +8,7 @@ import re
 import time
 import ssl
 from src.db import MongoDB
+from src.brightdata_config import get_brightdata_proxy
 
 # Setup logging
 logging.basicConfig(
@@ -124,6 +125,59 @@ def generate_dummy_cars(count=20):
         cars.append(car_data)
     
     return cars
+
+class SimpleScraper:
+    def __init__(self):
+        self.proxy = get_brightdata_proxy()
+        
+    async def scrape_urls(self, urls, country, max_cars=10):
+        """Scrape car listings from the provided URLs"""
+        logger.info(f"Starting simple scraper for {country} with {len(urls)} URLs (max {max_cars} cars)")
+        
+        # Create a session with the proxy if available
+        session_kwargs = {}
+        if self.proxy:
+            logger.info("Using BrightData proxy")
+            session_kwargs["proxy"] = self.proxy["http"]
+        
+        async with aiohttp.ClientSession(**session_kwargs) as session:
+            for url in urls:
+                try:
+                    logger.info(f"Scraping URL: {url}")
+                    
+                    # Make the request
+                    async with session.get(url) as response:
+                        if response.status != 200:
+                            logger.error(f"Failed to fetch {url}: {response.status}")
+                            continue
+                        
+                        html = await response.text()
+                        
+                        # Parse the HTML
+                        soup = BeautifulSoup(html, 'html.parser')
+                        
+                        # Extract car data (simplified example)
+                        car_elements = soup.select('.car-listing')[:max_cars]
+                        
+                        for car_element in car_elements:
+                            # Extract car details
+                            car_data = {
+                                "brand": car_element.select_one('.brand').text.strip(),
+                                "model": car_element.select_one('.model').text.strip(),
+                                "year": int(car_element.select_one('.year').text.strip()),
+                                "price": float(car_element.select_one('.price').text.strip().replace('$', '').replace(',', '')),
+                                "source_url": car_element.select_one('a')['href'],
+                                "country": country,
+                                "created_at": datetime.utcnow()
+                            }
+                            
+                            # Save to database (simplified)
+                            logger.info(f"Extracted car: {car_data['brand']} {car_data['model']}")
+                            
+                except Exception as e:
+                    logger.error(f"Error scraping {url}: {str(e)}")
+        
+        logger.info(f"Simple scraper completed for {country}")
 
 async def main():
     """Main scraper function"""

@@ -129,6 +129,58 @@
                 </button>
                 <span id="scrapeStatus" class="ml-2 text-sm"></span>
             </div>
+            
+            <!-- Test MongoDB Connection -->
+            <div>
+                <h3 class="font-medium mb-2">Test MongoDB Connection</h3>
+                <p class="text-gray-600 mb-4">Test the connection to MongoDB Atlas.</p>
+                
+                <button id="testMongoBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Test MongoDB Connection
+                </button>
+                <span id="testMongoStatus" class="ml-2 text-sm"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this section to your admin.html file -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Run Scraper</h5>
+        </div>
+        <div class="card-body">
+            <form id="scraper-form">
+                <div class="mb-3">
+                    <label for="scraper-type" class="form-label">Scraper Type</label>
+                    <select class="form-select" id="scraper-type">
+                        <option value="simple">Simple Scraper</option>
+                        <option value="large">Large Scale Scraper</option>
+                        <option value="real">Real Scraper</option>
+                        <option value="default">Default Scraper</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="scraper-country" class="form-label">Country</label>
+                    <select class="form-select" id="scraper-country">
+                        <option value="denmark">Denmark</option>
+                        <option value="sweden">Sweden</option>
+                        <option value="norway">Norway</option>
+                        <option value="germany">Germany</option>
+                        <option value="portugal">Portugal</option>
+                        <option value="poland">Poland</option>
+                        <option value="france">France</option>
+                        <option value="italy">Italy</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" id="run-scraper-btn">
+                    Run Scraper
+                </button>
+            </form>
+            <div class="mt-3" id="scraper-status" style="display: none;">
+                <div class="alert alert-info">
+                    <span id="scraper-status-message"></span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -156,18 +208,8 @@
         
         // Create a universal API client that works in both standalone and mounted modes
         const ApiClient = {
-            baseUrl: '',
-            
-            init() {
-                // Determine if we're running in standalone mode or as part of the main app
-                const path = window.location.pathname;
-                this.baseUrl = path.includes('/admin') ? '/admin' : '';
-                console.log(`API Client initialized with baseUrl: ${this.baseUrl}`);
-                return this;
-            },
-            
             async get(endpoint) {
-                const url = `${this.baseUrl}${endpoint}`;
+                const url = `/api${endpoint}`;
                 console.log(`GET ${url}`);
                 const response = await fetch(url);
                 if (!response.ok) {
@@ -177,7 +219,7 @@
             },
             
             async post(endpoint, data = {}) {
-                const url = `${this.baseUrl}${endpoint}`;
+                const url = `/api${endpoint}`;
                 console.log(`POST ${url}`);
                 const response = await fetch(url, {
                     method: 'POST',
@@ -191,7 +233,7 @@
                 }
                 return response.json();
             }
-        }.init();
+        };
         
         try {
             // Use the API client for all requests
@@ -434,4 +476,5 @@
         });
     });
 </script>
+<script src="/static/js/admin.js"></script>
 {% endblock %} 

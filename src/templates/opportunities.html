@@ -1,21 +1,52 @@
 {% extends "base.html" %}
 
-{% block title %}Price Opportunities | CarAgentApp{% endblock %}
+{% block title %}Car Buying Opportunities | CarAgentApp{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">Price Opportunities</h1>
+    <h1 class="text-3xl font-bold mb-6">Car Buying Opportunities</h1>
     
-    <div id="status" class="mb-6 p-4 bg-blue-100 text-blue-800 rounded-lg">
-        Finding price opportunities across different markets...
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 class="text-xl font-semibold mb-4">Find Underpriced Cars</h2>
+        
+        <div id="opportunities-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="p-4 border rounded-lg bg-gray-50">
+                <p class="text-center text-gray-500">Loading opportunities...</p>
+            </div>
+        </div>
     </div>
     
-    <div id="opportunities" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Opportunities will be loaded here -->
-    </div>
-    
-    <div id="noOpportunities" class="hidden text-center py-8 text-gray-500">
-        No significant price differences found at the moment. Check back later!
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Opportunity Settings</h2>
+        
+        <form id="opportunity-settings-form" class="space-y-4">
+            <div>
+                <label for="min-price-diff" class="block text-sm font-medium text-gray-700">Minimum Price Difference (%)</label>
+                <input type="number" id="min-price-diff" name="min-price-diff" value="15" min="5" max="50" 
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <p class="mt-1 text-sm text-gray-500">Cars must be at least this percentage below market value</p>
+            </div>
+            
+            <div>
+                <label for="max-age" class="block text-sm font-medium text-gray-700">Maximum Car Age (years)</label>
+                <input type="number" id="max-age" name="max-age" value="10" min="1" max="30" 
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <p class="mt-1 text-sm text-gray-500">Only show cars newer than this many years</p>
+            </div>
+            
+            <div>
+                <label for="min-listings" class="block text-sm font-medium text-gray-700">Minimum Comparable Listings</label>
+                <input type="number" id="min-listings" name="min-listings" value="3" min="1" max="20" 
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <p class="mt-1 text-sm text-gray-500">Require at least this many comparable listings for market value calculation</p>
+            </div>
+            
+            <div>
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Update Settings
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
@@ -23,111 +54,71 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', async function() {
-        const statusEl = document.getElementById('status');
-        const opportunitiesEl = document.getElementById('opportunities');
-        const noOpportunitiesEl = document.getElementById('noOpportunities');
+        const opportunitiesContainer = document.getElementById('opportunities-container');
+        const settingsForm = document.getElementById('opportunity-settings-form');
         
-        try {
-            // Fetch all cars
-            const response = await fetch('/api/cars');
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const cars = await response.json();
-            
-            // Find arbitrage opportunities
-            const opportunities = findArbitrageOpportunities(cars);
-            
-            // Hide loading status
-            statusEl.classList.add('hidden');
-            
-            // Display opportunities or no opportunities message
-            if (opportunities.length > 0) {
-                displayOpportunities(opportunities);
-            } else {
-                noOpportunitiesEl.classList.remove('hidden');
-            }
-            
-        } catch (error) {
-            console.error('Error loading opportunities:', error);
-            statusEl.className = 'mb-6 p-4 bg-red-100 text-red-800 rounded-lg';
-            statusEl.textContent = `Error: ${error.message}`;
-        }
-        
-        function displayOpportunities(opportunities) {
-            opportunitiesEl.innerHTML = opportunities.map(opp => {
-                const lowestPrice = opp.cars.reduce((min, car) => 
-                    car.priceValue < min.priceValue ? car : min, opp.cars[0]);
-                const highestPrice = opp.cars.reduce((max, car) => 
-                    car.priceValue > max.priceValue ? car : max, opp.cars[0]);
+        // Function to load opportunities
+        async function loadOpportunities() {
+            try {
+                opportunitiesContainer.innerHTML = '<div class="p-4 border rounded-lg bg-gray-50 col-span-full"><p class="text-center text-gray-500">Loading opportunities...</p></div>';
                 
-                const priceDiff = ((highestPrice.priceValue - lowestPrice.priceValue) / highestPrice.priceValue * 100).toFixed(1);
+                // Get settings values
+                const minPriceDiff = document.getElementById('min-price-diff').value;
+                const maxAge = document.getElementById('max-age').value;
+                const minListings = document.getElementById('min-listings').value;
                 
-                return `
-                <div class="bg-white rounded-lg shadow p-4">
-                    <h3 class="font-bold text-lg">${opp.brand} ${opp.model} (${opp.year})</h3>
-                    <p class="text-green-600 font-bold">Price difference: ${priceDiff}%</p>
-                    <div class="mt-2 space-y-2">
-                        ${opp.cars.map(car => `
-                            <a href="/car/${car.id}" class="block hover:bg-gray-50 p-2 rounded">
-                                <div class="flex justify-between">
-                                    <span>${car.country}</span>
-                                    <span class="font-bold ${car.id === lowestPrice.id ? 'text-green-600' : car.id === highestPrice.id ? 'text-red-600' : ''}">${car.price}</span>
-                                </div>
-                            </a>
-                        `).join('')}
-                    </div>
-                </div>
-                `;
-            }).join('');
-        }
-        
-        function findArbitrageOpportunities(cars) {
-            // Group cars by brand, model, and year
-            const groups = {};
-            
-            cars.forEach(car => {
-                if (!car.priceValue) return; // Skip cars without price value
+                // Call the API to get opportunities
+                const response = await fetch(`/api/opportunities?min_price_diff=${minPriceDiff}&max_age=${maxAge}&min_listings=${minListings}`);
                 
-                const key = `${car.brand}|${car.model}|${car.year}`;
-                if (!groups[key]) groups[key] = [];
-                groups[key].push(car);
-            });
-            
-            // Find groups with significant price differences across countries
-            const opportunities = [];
-            
-            for (const [key, groupCars] of Object.entries(groups)) {
-                // Only consider groups with cars from different countries
-                const countries = new Set(groupCars.map(car => car.country));
-                if (countries.size < 2) continue;
-                
-                // Find min and max prices
-                const prices = groupCars.map(car => car.priceValue);
-                const minPrice = Math.min(...prices);
-                const maxPrice = Math.max(...prices);
-                
-                // Calculate price difference percentage
-                const priceDiff = (maxPrice - minPrice) / maxPrice;
-                
-                // If price difference is significant (>15%), add to opportunities
-                if (priceDiff > 0.15) {
-                    const [brand, model, year] = key.split('|');
-                    opportunities.push({
-                        brand,
-                        model,
-                        year,
-                        priceDifference: priceDiff,
-                        cars: groupCars
-                    });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    opportunitiesContainer.innerHTML = '<div class="p-4 border rounded-lg bg-gray-50 col-span-full"><p class="text-center text-gray-500">No opportunities found. Try adjusting your settings.</p></div>';
+                    return;
+                }
+                
+                // Render the opportunities
+                opportunitiesContainer.innerHTML = data.map(opportunity => `
+                    <div class="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold">${opportunity.brand} ${opportunity.model} (${opportunity.year})</h3>
+                            <div class="mt-2 flex justify-between">
+                                <span class="text-gray-600">${opportunity.mileage}</span>
+                                <span class="font-bold text-green-600">${opportunity.price}</span>
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-sm text-gray-500">Market value: ${opportunity.market_value}</span>
+                                <div class="mt-1 flex items-center">
+                                    <span class="text-sm font-medium text-green-600">${opportunity.discount_percentage}% below market</span>
+                                    <span class="ml-2 text-sm text-gray-500">(${opportunity.discount_amount} savings)</span>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <a href="/car/${opportunity.id}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View Details</a>
+                                <a href="${opportunity.source_url}" target="_blank" class="ml-4 text-blue-600 hover:text-blue-800 text-sm font-medium">View Listing</a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading opportunities:', error);
+                opportunitiesContainer.innerHTML = `<div class="p-4 border rounded-lg bg-red-50 col-span-full"><p class="text-center text-red-500">Error loading opportunities: ${error.message}</p></div>`;
             }
-            
-            // Sort by price difference (highest first)
-            return opportunities.sort((a, b) => b.priceDifference - a.priceDifference);
         }
+        
+        // Load opportunities on page load
+        loadOpportunities();
+        
+        // Handle settings form submission
+        settingsForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            loadOpportunities();
+        });
     });
 </script>
 {% endblock %} 

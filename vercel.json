@@ -5,11 +5,20 @@
       "src": "src/web_app.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "15mb"
+        "maxLambdaSize": "15mb",
+        "includeFiles": ["src/**/*.py", "src/templates/**", "src/static/**"]
       }
     }
   ],
   "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "src/static/$1"
+    },
+    {
+      "src": "/(api/.+)",
+      "dest": "src/web_app.py"
+    },
     {
       "src": "/(.*)",
       "dest": "src/web_app.py"
