@@ -11,6 +11,7 @@ import asyncio
 import subprocess
 import sys
 from fastapi.middleware.cors import CORSMiddleware
+import aiohttp
 
 # Import configuration
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -65,10 +66,24 @@ scraper_template = os.path.join(templates_dir, "scraper.html")
 logger.info(f"Opportunities template exists: {os.path.exists(opportunities_template)}")
 logger.info(f"Scraper template exists: {os.path.exists(scraper_template)}")
 
-# MongoDB connection
-client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URI)
-db = client[DB_NAME]
-collection = db[COLLECTION_NAME]
+# MongoDB connection - lazy initialization
+client = None
+db = None
+collection = None
+
+async def get_db_collection():
+    global client, db, collection
+    if client is None:
+        # Initialize the connection only when needed
+        client = motor.motor_asyncio.AsyncIOMotorClient(
+            MONGODB_URI,
+            serverSelectionTimeoutMS=5000,  # 5 second timeout for server selection
+            connectTimeoutMS=5000,          # 5 second timeout for connection
+            socketTimeoutMS=5000            # 5 second timeout for socket operations
+        )
+        db = client[DB_NAME]
+        collection = db[COLLECTION_NAME]
+    return collection
 
 def format_number(value, suffix=''):
     """Format number with thousand separators and optional suffix"""
@@ -134,42 +149,33 @@ def get_page_html(title, content):
 
 @app.get("/", response_class=HTMLResponse)
 async def home_view(request: Request):
-    """Home page view"""
+    """Home page view - lightweight version"""
     try:
-        # Get some recent cars from the database
-        cars = await collection.find().sort("_id", -1).limit(12).to_list(length=None)
-        
-        # Format the cars for display
-        car_html = ""
-        for car in cars:
-            car_id = str(car.get("_id", ""))
-            brand = car.get("brand", "Unknown")
-            model = car.get("model", "")
-            year = car.get("year", "")
-            price = format_currency(car.get("cash_price", 0))
-            
-            car_html += f"""
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold">{brand} {model}</h3>
-                    <div class="mt-2 flex justify-between">
-                        <span class="text-gray-600">{year}</span>
-                        <span class="font-bold">{price}</span>
-                    </div>
-                    <div class="mt-3">
-                        <a href="/car/{car_id}" class="text-blue-600 hover:text-blue-800">View Details</a>
-                    </div>
-                </div>
-            </div>
-            """
-        
-        # Create the content for the home page
-        content = f"""
+        # Create a simple content that loads quickly
+        content = """
         <div class="container mx-auto px-4 py-8">
             <h1 class="text-3xl font-bold mb-6">Car Listings</h1>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {car_html if cars else '<p class="col-span-full text-center text-gray-500">No cars found in the database.</p>'}
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <p class="mb-4">Welcome to CarAgentApp!</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <a href="/stats" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100">
+                        <h2 class="text-lg font-semibold text-blue-800">View Statistics</h2>
+                        <p class="text-sm text-gray-600">See database statistics and metrics</p>
+                    </a>
+                    <a href="/scrape" class="p-4 bg-green-50 rounded-lg hover:bg-green-100">
+                        <h2 class="text-lg font-semibold text-green-800">Run Scrapers</h2>
+                        <p class="text-sm text-gray-600">Scrape car data from various sources</p>
+                    </a>
+                    <a href="/admin" class="p-4 bg-purple-50 rounded-lg hover:bg-purple-100">
+                        <h2 class="text-lg font-semibold text-purple-800">Admin Panel</h2>
+                        <p class="text-sm text-gray-600">Manage your car database</p>
+                    </a>
+                    <a href="/api-test" class="p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100">
+                        <h2 class="text-lg font-semibold text-yellow-800">API Test</h2>
+                        <p class="text-sm text-gray-600">Test API endpoints</p>
+                    </a>
+                </div>
             </div>
         </div>
         """
@@ -193,7 +199,7 @@ async def car_detail_view(request: Request, car_id: str):
     try:
         # Get the car from the database
         from bson import ObjectId
-        car = await collection.find_one({"_id": ObjectId(car_id)})
+        car = await get_db_collection().find_one({"_id": ObjectId(car_id)})
         
         if not car:
             content = """
@@ -1303,7 +1309,7 @@ async def get_complete_car_info(car_id: str):
     """Get complete car information including contact details and images"""
     try:
         # First, get the basic car info
-        car = await collection.find_one({"_id": ObjectId(car_id)})
+        car = await get_db_collection().find_one({"_id": ObjectId(car_id)})
         if not car:
             raise HTTPException(status_code=404, detail="Car not found")
         
@@ -1352,7 +1358,7 @@ async def get_complete_car_info(car_id: str):
             car.update(complete_info)
             
             # Update the car in the database with the complete info
-            await collection.update_one(
+            await get_db_collection().update_one(
                 {"_id": ObjectId(car_id)},
                 {"$set": {
                     "complete_info": complete_info,
@@ -1390,16 +1396,16 @@ async def get_admin_stats():
     """Get database statistics for the admin page"""
     try:
         # Get total cars count
-        total_cars = await collection.count_documents({})
+        total_cars = await get_db_collection().count_documents({})
         
         # Get count of cars with source URLs
-        cars_with_url = await collection.count_documents({
+        cars_with_url = await get_db_collection().count_documents({
             "source_url": {"$exists": True, "$ne": ""},
             "invalid_source_url": {"$ne": True}
         })
         
         # Get count of cars without source URLs
-        cars_without_url = await collection.count_documents({
+        cars_without_url = await get_db_collection().count_documents({
             "$or": [
                 {"source_url": {"$exists": False}},
                 {"source_url": None},
@@ -1441,15 +1447,15 @@ async def remove_unverified_cars():
         }
         
         # Count how many cars match the criteria
-        count = await collection.count_documents(query)
+        count = await get_db_collection().count_documents(query)
         logger.info(f"Found {count} cars without verified source URLs")
         
         if count == 0:
-            return {"message": "No cars to remove", "new_total": await collection.count_documents({})}
+            return {"message": "No cars to remove", "new_total": await get_db_collection().count_documents({})}
         
         # Delete the cars
-        result = await collection.delete_many(query)
-        new_total = await collection.count_documents({})
+        result = await get_db_collection().delete_many(query)
+        new_total = await get_db_collection().count_documents({})
         
         return {
             "message": f"Successfully removed {result.deleted_count} cars",
@@ -1487,15 +1493,15 @@ async def remove_invalid_url_cars():
         query = {"invalid_source_url": True}
         
         # Count how many cars match the criteria
-        count = await collection.count_documents(query)
+        count = await get_db_collection().count_documents(query)
         logger.info(f"Found {count} cars with invalid source URLs")
         
         if count == 0:
-            return {"message": "No cars with invalid URLs to remove", "new_total": await collection.count_documents({})}
+            return {"message": "No cars with invalid URLs to remove", "new_total": await get_db_collection().count_documents({})}
         
         # Delete the cars
-        result = await collection.delete_many(query)
-        new_total = await collection.count_documents({})
+        result = await get_db_collection().delete_many(query)
+        new_total = await get_db_collection().count_documents({})
         
         return {
             "message": f"Successfully removed {result.deleted_count} cars with invalid URLs",
@@ -1589,10 +1595,10 @@ async def test_mongodb_connection():
         logger.info(f"Testing MongoDB connection to {MONGODB_URI}")
         
         # Count documents
-        count = await collection.count_documents({})
+        count = await get_db_collection().count_documents({})
         
         # Get a sample document
-        sample = await collection.find_one({})
+        sample = await get_db_collection().find_one({})
         
         # Create a test document
         test_doc = {
@@ -1602,10 +1608,10 @@ async def test_mongodb_connection():
         }
         
         # Insert the test document
-        result = await collection.insert_one(test_doc)
+        result = await get_db_collection().insert_one(test_doc)
         
         # Delete the test document
-        await collection.delete_one({"_id": result.inserted_id})
+        await get_db_collection().delete_one({"_id": result.inserted_id})
         
         return {
             "success": True,
@@ -1713,8 +1719,8 @@ async def get_stats():
     """Get database statistics"""
     try:
         # Get stats from database
-        total_cars = await collection.count_documents({})
-        cars_with_url = await collection.count_documents({"source_url": {"$exists": True, "$ne": ""}})
+        total_cars = await get_db_collection().count_documents({})
+        cars_with_url = await get_db_collection().count_documents({"source_url": {"$exists": True, "$ne": ""}})
         cars_without_url = total_cars - cars_with_url
         
         # Get currency service status
@@ -1937,6 +1943,11 @@ async def api_test_view(request: Request):
     """
     
     return HTMLResponse(get_page_html("API Test", content))
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "ok"}
 
 if __name__ == '__main__':
     import uvicorn

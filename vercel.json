@@ -2,26 +2,28 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/web_app.py",
+      "src": "src/minimal_app.py",
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "15mb",
-        "includeFiles": ["src/**/*.py", "src/templates/**", "src/static/**"]
+        "includeFiles": ["src/minimal_app.py"]
       }
     }
   ],
   "routes": [
     {
-      "src": "/static/(.*)",
-      "dest": "src/static/$1"
-    },
-    {
       "src": "/(api/.+)",
-      "dest": "src/web_app.py"
+      "dest": "src/minimal_app.py"
     },
     {
       "src": "/(.*)",
-      "dest": "src/web_app.py"
+      "dest": "src/minimal_app.py"
     }
-  ]
+  ],
+  "functions": {
+    "src/minimal_app.py": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
 } 
